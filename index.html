@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Form</title>
+</head>
+<body>
+    <h1>API Form</h1>
+
+    <h2>Registrar Usuario</h2>
+    <form id="register-form" action="/users/register/" method="post">
+        <label for="Usuario">Usuario:</label>
+        <input type="text" id="Usuario" name="Usuario" required>
+        <label for="Correo">Correo:</label>
+        <input type="email" id="Correo" name="Correo" required>
+        <label for="Mensaje">Mensaje:</label>
+        <input type="text" id="Mensaje" name="Mensaje">
+        <button type="submit">Registrar</button>
+    </form>
+
+    <h2>Obtener Mensajes de Usuario</h2>
+    <form id="get-messages-form" action="/users/{username}/messages/" method="get">
+        <label for="username">Usuario:</label>
+        <input type="text" id="username" name="username" required>
+        <button type="submit">Obtener Mensajes</button>
+    </form>
+
+    <h2>Lista de Usuarios</h2>
+    <form id="user-list-form" action="/users/lista/" method="post">
+        <button type="submit">Obtener Lista de Usuarios</button>
+    </form>
+
+    <h2>Publicar Mensaje</h2>
+    <form id="publish-message-form" action="/users/publish/" method="post">
+        <label for="Usuario">Usuario:</label>
+        <input type="text" id="Usuario" name="Usuario" required>
+        <label for="Mensaje">Mensaje:</label>
+        <input type="text" id="Mensaje" name="Mensaje" required>
+        <button type="submit">Publicar Mensaje</button>
+    </form>
+</body>
+</html>
