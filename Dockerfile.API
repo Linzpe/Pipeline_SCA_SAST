@@ -38,7 +38,7 @@ RUN a2ensite 000-default && a2enmod wsgi
 RUN pip install --no-cache-dir -r /var/www/html/app/requirements.txt
 
 # Expone el puerto 8888
-EXPOSE 8888
+EXPOSE 8088
 
 # Comando para ejecutar Apache en el primer plano
 CMD ["apache2ctl", "-D", "FOREGROUND"]
