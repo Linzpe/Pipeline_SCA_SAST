@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /var/www/html/app
 
 # Copia los archivos de la aplicación al contenedor
-COPY API.py /var/www/html/app/
+COPY API.py test.py /var/www/html/app/
 COPY wsgi.py /var/www/html/app/
 COPY requirements.txt /var/www/html/app/
 COPY templates /var/www/html/app/templates/
