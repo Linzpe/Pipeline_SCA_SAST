@@ -1,0 +1,12 @@
+# Dockerfile.db
+
+FROM postgres:13.3
+
+# Configuraci�n de las variables de entorno
+ENV POSTGRES_PASSWORD docker
+ENV POSTGRES_DB Database_API
+
+# Copia el script SQL de inicializaci�n
+COPY Tabla.sql /docker-entrypoint-initdb.d/
+
+EXPOSE 5432
