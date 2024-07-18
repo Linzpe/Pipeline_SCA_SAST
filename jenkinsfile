@@ -1,0 +1,95 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = 'your-username'
+        API_IMAGE = 'my-api:latest'
+        DB_IMAGE = 'my-db:latest'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Linzpe/Pipeline_SCA_SAST.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    sh '''
+                    docker build -t $DOCKER_REGISTRY/$API_IMAGE -f Dockerfile.API .
+                    docker build -t $DOCKER_REGISTRY/$DB_IMAGE -f Dockerfile.db .
+                    '''
+                }
+            }
+        }
+
+        stage('Push') {
+            steps {
+                script {
+                    withDockerRegistry([ credentialsId: 'docker-hub-credentials', url: '' ]) {
+                        sh '''
+                        docker push $DOCKER_REGISTRY/$API_IMAGE
+                        docker push $DOCKER_REGISTRY/$DB_IMAGE
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Pull and Deploy') {
+            steps {
+                script {
+                    sh '''
+                    kubectl set image deployment/api api=$DOCKER_REGISTRY/$API_IMAGE
+                    kubectl set image deployment/db db=$DOCKER_REGISTRY/$DB_IMAGE
+                    kubectl rollout status deployment/api
+                    kubectl rollout status deployment/db
+                    '''
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                script {
+                    // Levantar los servicios con Docker Compose
+                    sh 'docker-compose up -d'
+
+                    // Ejecutar los tests dentro del contenedor de la API
+                    sh '''
+                    docker-compose exec api sh -c "
+                        pip install pytest
+                        pytest test.py
+                    "
+                    '''
+
+                    // Apagar los servicios después de los tests
+                    sh 'docker-compose down'
+                }
+            }
+        }
+
+        stage('Bandit Analysis') {
+            steps {
+                sh '''
+                pip install bandit
+                bandit -r .
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            // Publicar resultados de los tests si es necesario
+            junit 'test-results/*.xml'
+        }
+        cleanup {
+            // Limpieza opcional, por ejemplo eliminar los contenedores si se han creado persistentemente
+            sh 'docker system prune -f'
+        }
+    }
+}
+
