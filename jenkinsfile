@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REGISTRY = 'your-username'
+        // Variables que se usan repetidas veces a lo largo del código. Son como variables de entorno.
+        DOCKER_REGISTRY = '192.168.49.2:31617'
         API_IMAGE = 'my-api:latest'
         DB_IMAGE = 'my-db:latest'
     }
@@ -28,17 +29,15 @@ pipeline {
         stage('Push') {
             steps {
                 script {
-                    withDockerRegistry([ credentialsId: 'docker-hub-credentials', url: '' ]) {
-                        sh '''
-                        docker push $DOCKER_REGISTRY/$API_IMAGE
-                        docker push $DOCKER_REGISTRY/$DB_IMAGE
-                        '''
-                    }
+                    sh '''
+                    docker push $DOCKER_REGISTRY/$API_IMAGE
+                    docker push $DOCKER_REGISTRY/$DB_IMAGE
+                    '''
                 }
             }
         }
 
-        stage('Pull and Deploy') {
+        stage('Deploy') {
             steps {
                 script {
                     sh '''
@@ -54,19 +53,13 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    // Levantar los servicios con Docker Compose
-                    sh 'docker-compose up -d'
-
                     // Ejecutar los tests dentro del contenedor de la API
                     sh '''
-                    docker-compose exec api sh -c "
+                    kubectl exec $(kubectl get pod -l app=api -o jsonpath="{.items[0].metadata.name}") -- sh -c "
                         pip install pytest
                         pytest test.py
                     "
                     '''
-
-                    // Apagar los servicios después de los tests
-                    sh 'docker-compose down'
                 }
             }
         }
@@ -92,4 +85,5 @@ pipeline {
         }
     }
 }
+
 
