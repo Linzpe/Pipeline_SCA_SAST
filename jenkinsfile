@@ -24,6 +24,27 @@ pipeline {
                     '''
                 }
             }
+            post {
+                // En caso de que falle la etapa "build" se para el pipeline y se "postea" un failure
+                failure {
+                    echo 'Error en el stage Build. Se detiene el pipeline'
+                    error('Build failed') 
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                script {
+                    // Ejecutar los tests dentro del contenedor de la API
+                    sh '''
+                    kubectl exec $(kubectl get pod -l app=api -o jsonpath="{.items[0].metadata.name}") -- sh -c "
+                        pip install pytest
+                        pytest test.py
+                    "
+                    '''
+                }
+            }
         }
 
         stage('Push') {
@@ -45,20 +66,6 @@ pipeline {
                     kubectl set image deployment/db db=$DOCKER_REGISTRY/$DB_IMAGE
                     kubectl rollout status deployment/api
                     kubectl rollout status deployment/db
-                    '''
-                }
-            }
-        }
-
-        stage('Test') {
-            steps {
-                script {
-                    // Ejecutar los tests dentro del contenedor de la API
-                    sh '''
-                    kubectl exec $(kubectl get pod -l app=api -o jsonpath="{.items[0].metadata.name}") -- sh -c "
-                        pip install pytest
-                        pytest test.py
-                    "
                     '''
                 }
             }
