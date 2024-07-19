@@ -1,0 +1,26 @@
+# Dockerfile.db
+
+FROM postgres:latest
+
+# Configuraci�n de las variables de entorno
+ENV POSTGRES_PASSWORD docker
+ENV POSTGRES_DB Database_API
+
+# Copia el script SQL de inicializaci�n
+COPY Tabla.sql /docker-entrypoint-initdb.d/
+
+# Copia los certificados SSL
+COPY certs/postgres.crt /var/lib/postgresql/postgres.crt
+COPY certs/postgres.key /var/lib/postgresql/postgres.key
+
+
+# Ajusta los permisos de los certificados
+RUN chmod 600 /var/lib/postgresql/postgres.key
+RUN chown postgres:postgres /var/lib/postgresql/postgres.crt /var/lib/postgresql/postgres.key
+
+# Configurar PostgreSQL para usar SSL
+RUN echo "ssl = on" >> /usr/share/postgresql/postgresql.conf.sample
+RUN echo "ssl_cert_file = '/var/lib/postgresql/postgres.crt'" >> /usr/share/postgresql/postgresql.conf.sample
+RUN echo "ssl_key_file = '/var/lib/postgresql/postgres.key'" >> /usr/share/postgresql/postgresql.conf.sample
+
+EXPOSE 5432

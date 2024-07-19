@@ -1,0 +1,50 @@
+# Usa una imagen base de Python en Debian Slim
+FROM python:3.9-buster
+
+# Establece la variable de entorno DEBIAN_FRONTEND a noninteractive para evitar las preguntas durante la instalación
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instala dependencias necesarias
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash \
+    apache2 \
+    apache2-dev \
+    gcc \
+    libpq-dev \
+    curl \
+    gnupg \
+    lsb-release \
+    apt-transport-https \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instala Azure CLI
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+RUN pip install mod_wsgi
+RUN mod_wsgi-express install-module > /etc/apache2/mods-available/wsgi.load
+
+# Habilita el módulo wsgi en Apache y los módulos ssl
+RUN a2enmod wsgi
+RUN a2enmod ssl
+RUN a2enmod rewrite ssl
+RUN mkdir -p /var/www/html/app/certs
+
+# Establece el directorio de trabajo
+WORKDIR /var/www/html/app
+
+# Copia los archivos de la aplicación al contenedor
+COPY API.py /var/www/html/app/
+COPY wsgi.py /var/www/html/app/
+COPY requirements.txt /var/www/html/app/
+COPY templates /var/www/html/app/templates/
+COPY apache-config/000-default.conf /etc/apache2/sites-available/000-default.conf
+COPY certs/postgres.crt /var/www/html/app/certs/postgres.crt
+COPY certs/postgres.key /var/www/html/app/certs/postgres.key
+
+RUN pip install --no-cache-dir -r /var/www/html/app/requirements.txt
+
+# Expone el puerto 443 para Apache
+EXPOSE 443
+
+# Comando para ejecutar Apache en el primer plano
+CMD ["apache2ctl", "-D", "FOREGROUND"]
