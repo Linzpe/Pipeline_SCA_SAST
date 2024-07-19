@@ -36,10 +36,10 @@ WORKDIR /var/www/html/app
 COPY API.py /var/www/html/app/
 COPY wsgi.py /var/www/html/app/
 COPY requirements.txt /var/www/html/app/
-COPY templates /var/www/html/app/templates/
-COPY apache-config/000-default.conf /etc/apache2/sites-available/000-default.conf
-COPY certs/postgres.crt /var/www/html/app/certs/postgres.crt
-COPY certs/postgres.key /var/www/html/app/certs/postgres.key
+COPY index.html /var/www/html/app/templates/
+COPY 000-default.conf /etc/apache2/sites-available/000-default.conf
+COPY postgres.crt /var/www/html/app/certs/postgres.crt
+COPY postgres.key /var/www/html/app/certs/postgres.key
 
 RUN pip install --no-cache-dir -r /var/www/html/app/requirements.txt
 
