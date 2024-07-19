@@ -37,15 +37,46 @@ pipeline {
             steps {
                 script {
                     // Ejecutar los tests dentro del contenedor de la API
-                    sh '''
-                    kubectl exec $(kubectl get pod -l app=api -o jsonpath="{.items[0].metadata.name}") -- sh -c "
-                        pip install pytest
-                        pytest test.py
-                    "
-                    '''
+                    docker.image("$DOCKER_REGISTRY/$API_IMAGE").inside {  # Esta es una manera de abrir un contenedor para ejecutar comandos temporalmente
+                        sh '''
+                            // Test de funcionamiento del código de la API
+                            pip install pytest
+                            pytest test.py
+                        '''
                 }
             }
         }
+
+        stage('SAST') {
+            steps {
+                script {
+                    // Se realiza el análisis de código estático de la API (SAST) con Bandit
+                    docker.image("$DOCKER_REGISTRY/$API_IMAGE").inside {
+                        sh '''
+                            pip install bandit
+                            bandit -r . -f json -o bandit_report.json'
+                        '''
+                    }
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'bandit_report.json', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('Bandit_report análisis') {
+            steps {
+                sh '''
+                    apt-get update && apt-get install -y jq
+                    highs=$(jq '[.results[] | select(.issue_severity == "HIGH")] | length' bandit_report.json)
+                    mediums=$(jq '[.results[] | select(.issue_severity == "MEDIUM")] | length' bandit_report.json)
+                    echo "Numero de HIGH VULNERABILITIES: $highs"
+                    echo "\nNumero de MEDIUM VULNERABILITIES: $mediums"
+                '''
+            }
+
 
         stage('Push') {
             steps {
