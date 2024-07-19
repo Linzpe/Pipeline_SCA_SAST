@@ -10,8 +10,8 @@ ENV POSTGRES_DB Database_API
 COPY Tabla.sql /docker-entrypoint-initdb.d/
 
 # Copia los certificados SSL
-COPY certs/postgres.crt /var/lib/postgresql/postgres.crt
-COPY certs/postgres.key /var/lib/postgresql/postgres.key
+COPY postgres.crt /var/lib/postgresql/postgres.crt
+COPY postgres.key /var/lib/postgresql/postgres.key
 
 
 # Ajusta los permisos de los certificados
