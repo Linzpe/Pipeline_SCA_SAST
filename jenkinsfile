@@ -86,7 +86,7 @@ pipeline {
         stage('SCA') {
             steps {
                 script {
-                    docker.image("$DOCKER_REGISTRY/$API_IMAGE").inside {  # Volvemos a iniciar temporalmente el contenedor
+                    docker.image("$DOCKER_REGISTRY/$API_IMAGE").inside {  // Volvemos a iniciar temporalmente el contenedor
                         sh '''
                             # Instalar Safety
                             pip install safety
