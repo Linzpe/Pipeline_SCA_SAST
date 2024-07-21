@@ -43,6 +43,7 @@ pipeline {
                             pip install pytest
                             pytest test.py
                         '''
+                    }
                 }
             }
         }
@@ -74,9 +75,34 @@ pipeline {
                     mediums=$(jq '[.results[] | select(.issue_severity == "MEDIUM")] | length' bandit_report.json)
                     echo "Numero de HIGH VULNERABILITIES: $highs"
                     echo "\nNumero de MEDIUM VULNERABILITIES: $mediums"
+                    if [ "$highs" > 3 ]; then
+                        echo "Hay más de 3 vulnerabilidades HIGH. Fallando la build."
+                        exit 1
+                    fi
                 '''
             }
+        }
 
+        stage('SCA') {
+            steps {
+                script {
+                    docker.image("$DOCKER_REGISTRY/$API_IMAGE").inside {  # Volvemos a iniciar temporalmente el contenedor
+                        sh '''
+                            # Instalar Safety
+                            pip install safety
+                            # Ejecutar análisis con Safety y guardar el reporte
+                            safety check -r requirements.txt --json > safety_report.json
+                        '''
+                    }
+                }
+            }
+            post {
+                always {
+                    // Publicar el reporte de Safety como artefacto
+                    archiveArtifacts artifacts: 'safety_report.json', allowEmptyArchive: true
+                }
+            }
+        }
 
         stage('Push') {
             steps {
@@ -89,7 +115,7 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Pull-Deploy') {
             steps {
                 script {
                     sh '''
@@ -102,25 +128,7 @@ pipeline {
             }
         }
 
-        stage('Bandit Analysis') {
-            steps {
-                sh '''
-                pip install bandit
-                bandit -r .
-                '''
-            }
-        }
-    }
-
-    post {
-        always {
-            // Publicar resultados de los tests si es necesario
-            junit 'test-results/*.xml'
-        }
-        cleanup {
-            // Limpieza opcional, por ejemplo eliminar los contenedores si se han creado persistentemente
-            sh 'docker system prune -f'
-        }
+    
     }
 }
 
