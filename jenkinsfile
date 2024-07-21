@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // Variables que se usan repetidas veces a lo largo del código. Son como variables de entorno.
-        DOCKER_REGISTRY = '192.168.49.2:31617'
+        DOCKER_REGISTRY = 'basileusmegas/pipeline'
         API_IMAGE = 'my-api:latest'
         DB_IMAGE = 'my-db:latest'
     }
