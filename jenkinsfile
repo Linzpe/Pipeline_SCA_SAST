@@ -37,7 +37,7 @@ pipeline {
             steps {
                 script {
                     // Ejecutar los tests dentro del contenedor de la API
-                    docker.image("$DOCKER_REGISTRY/$API_IMAGE").inside {  # Esta es una manera de abrir un contenedor para ejecutar comandos temporalmente
+                    docker.image("$DOCKER_REGISTRY/$API_IMAGE").inside {  // Esta es una manera de abrir un contenedor para ejecutar comandos temporalmente
                         sh '''
                             // Test de funcionamiento del código de la API
                             pip install pytest
