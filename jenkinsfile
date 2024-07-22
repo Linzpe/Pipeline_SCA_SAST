@@ -1,5 +1,9 @@
 pipeline {
-    agent any
+    agent {
+        kubernetes {
+            label 'jenkins'
+        }
+    }
 
     environment {
         // Variables que se usan repetidas veces a lo largo del código. Son como variables de entorno.
