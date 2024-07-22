@@ -13,11 +13,16 @@ pipeline {
     }
 
     stages {
-        script {
-            container('kubectl') {
-                sh 'docker --version'
+        stage('Inicial') {
+            steps {
+                script {
+                    container('kubectl') {
+                        sh 'docker --version'
+                    }
+                }
             }
         }
+    
         stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/Linzpe/Pipeline_SCA_SAST.git'
