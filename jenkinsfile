@@ -13,6 +13,16 @@ pipeline {
     }
 
     stages {
+        script {
+            container('kubectl') {
+                sh 'docker --version'
+                sh 'apk add --no-cache curl'
+                sh 'curl -LO "https://dl.k8s.io/release/$KUBEVERSION/bin/linux/amd64/kubectl"'
+                sh 'chmod +x ./kubectl'
+                sh 'mv ./kubectl /usr/local/bin/kubectl'
+                sh 'kubectl get pods'
+            }
+        }
         stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/Linzpe/Pipeline_SCA_SAST.git'
