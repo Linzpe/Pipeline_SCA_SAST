@@ -14,7 +14,7 @@ pipeline {
         stage('Inicial') {
             steps {
                 script {
-                    container('kubectl') {
+                    container('docker') {
                         sh 'docker --version'
                     }
                 }
