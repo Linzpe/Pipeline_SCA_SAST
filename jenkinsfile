@@ -1,6 +1,8 @@
 pipeline {
     agent {
-        label 'jenkins'
+        kubernetes {
+            label 'jenkins'
+        }
     }
 
     environment {
