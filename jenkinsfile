@@ -1,11 +1,11 @@
 pipeline {
+    // Definimos el agent PREDETERMINADO
     agent {
         label 'docker-agent'
     }
 
     environment {
         // Variables que se usan repetidas veces a lo largo del código. Son como variables de entorno.
-        DOCKER_REGISTRY = 'basileusmegas/pipeline'
         API_IMAGE = 'my-api:latest'
         DB_IMAGE = 'my-db:latest'
     }
@@ -22,18 +22,39 @@ pipeline {
         }
     
         stage('Checkout') {
+            // Definimos el agente específico de python para este stage.
+            agent {
+                label 'python-agent'
+            }
             steps {
                 git branch: 'main', url: 'https://github.com/Linzpe/Pipeline_SCA_SAST.git'
+                // GUARDAMOS LOS ARCHIVOS CLONADOS: (usamos stash, sirve para almacenar un conjunto de 
+                // archivos que serán usados en otros stages ejecutados por agentes distintos
+                stash includes: '**', name: 'repo'
+                
+                // Una vez clonado Y GUARDADO el repositorio, realizamos el análisis del funcionamiento 
+                // de nuestra API ejecutando el código python "test.py".
+                container('python') {
+                // Test de funcionamiento del código de la API
+                    sh '''
+                        pip install pytest
+                        pytest test.py
+                    '''
+                }
             }
         }
 
         stage('Build') {
             steps {
                 script {
-                    sh '''
-                    docker build -t $DOCKER_REGISTRY/$API_IMAGE -f Dockerfile.API .
-                    docker build -t $DOCKER_REGISTRY/$DB_IMAGE -f Dockerfile.db .
-                    '''
+                    container('docker') {
+                        // UNTASH para que los archivos "stashed" se añadan al workspace actual
+                        untash 'repo'
+                        sh '''
+                            docker build -t $API_IMAGE -f Dockerfile.API .
+                            docker build -t $DB_IMAGE -f Dockerfile.db .
+                        '''
+                    }
                 }
             }
             post {
@@ -45,31 +66,17 @@ pipeline {
             }
         }
 
-        stage('Test') {
-            steps {
-                script {
-                    // Ejecutar los tests dentro del contenedor de la API
-                    docker.image("$DOCKER_REGISTRY/$API_IMAGE").inside {  // Esta es una manera de abrir un contenedor para ejecutar comandos temporalmente
-                        sh '''
-                            // Test de funcionamiento del código de la API
-                            pip install pytest
-                            pytest test.py
-                        '''
-                    }
-                }
-            }
-        }
-
         stage('SAST') {
+            agent {
+                label 'python-agent'
+            }
             steps {
-                script {
-                    // Se realiza el análisis de código estático de la API (SAST) con Bandit
-                    docker.image("$DOCKER_REGISTRY/$API_IMAGE").inside {
-                        sh '''
-                            pip install bandit
-                            bandit -r . -f json -o bandit_report.json'
-                        '''
-                    }
+                container('python') {
+                    untash 'repo'
+                    sh '''
+                        pip install bandit  
+                        bandit -r . -f json -o bandit_report.json'
+                    '''
                 }
             }
             post {
@@ -79,7 +86,7 @@ pipeline {
             }
         }
 
-        stage('Bandit_report análisis') {
+        stage('Security Gate') {
             steps {
                 sh '''
                     apt-get update && apt-get install -y jq
