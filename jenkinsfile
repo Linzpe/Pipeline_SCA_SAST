@@ -27,7 +27,11 @@ pipeline {
     
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Linzpe/Pipeline_SCA_SAST.git'
+                sh '''
+                    apt-get update
+                    apt-get install -y ca-certificates
+                    git clone https://github.com/Linzpe/Pipeline_SCA_SAST.git
+                '''
                 // GUARDAMOS LOS ARCHIVOS CLONADOS: (usamos stash, sirve para almacenar un conjunto de 
                 // archivos que serán usados en otros stages ejecutados por agentes distintos
                 stash includes: '**', name: 'repo'
