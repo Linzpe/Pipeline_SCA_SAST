@@ -96,7 +96,11 @@ pipeline {
             steps {
                 unstash 'bandit-report'
                 unstash 'repo'
-                sh 'Security_gate.sh'
+                sh '''
+                    ls -la
+                    chmod +x Security_gate.sh
+                    ./Security_gate.sh'
+                '''
             }
         }
 
