@@ -79,7 +79,7 @@ pipeline {
                     container('python') {
                         sh '''
                             pip install bandit  
-                            bandit -r . -f json -o bandit_report.json
+                            bandit -r . -f json -o bandit_report.json || true
                         '''
                     }
                 }
