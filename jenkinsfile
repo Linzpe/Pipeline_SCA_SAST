@@ -163,6 +163,7 @@ pipeline {
                             docker push $DOCKER_REGISTRY/$DB_IMAGE
                         '''
                         }
+                    }
                 }
             }
         }
