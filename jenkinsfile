@@ -18,44 +18,50 @@ pipeline {
                     container('docker') {
                         sh 'docker --version'
                     }
-                    container('python') {
-                        sh 'python --version'
-                    }
+                    // Eliminado el uso del contenedor 'python' ya que será manejado en un agente separado
                 }
             }
         }
         
-    
-    stage('Checkout') {
-        steps {
-            sh '''
-                apt-get update
-                apt-get install -y ca-certificates
-                git clone https://github.com/Linzpe/Pipeline_SCA_SAST.git
-            '''
-            // GUARDAMOS LOS ARCHIVOS CLONADOS: usamos stash, sirve para almacenar un conjunto de 
-            // archivos que serán usados en otros stages ejecutados por agentes distintos
-            stash includes: '**', name: 'repo'
-                
-            // Una vez clonado Y GUARDADO el repositorio, realizamos el análisis del funcionamiento 
-            // de nuestra API ejecutando el código python "test.py".
-            container('python') {
-            // Test de funcionamiento del código de la API
+        stage('Checkout') {
+            steps {
                 sh '''
-                    pip install pytest
-                    pytest test.py
+                    apt-get update
+                    apt-get install -y ca-certificates
+                    git clone https://github.com/Linzpe/Pipeline_SCA_SAST.git
                 '''
+                // GUARDAMOS LOS ARCHIVOS CLONADOS: usamos stash, sirve para almacenar un conjunto de 
+                // archivos que serán usados en otros stages ejecutados por agentes distintos
+                stash includes: '**', name: 'repo'
             }
         }
-    }
+
+        stage('Test') {
+            agent {
+                label 'python-agent'
+            }
+            steps {
+                script {
+                    unstash 'repo'
+                    // Test de funcionamiento del código de la API
+                    sh '''
+                        pip install pytest
+                        pytest test.py
+                    '''
+                }
+            }
+        }
 
         stage('SAST') {
+            agent {
+                label 'python-agent'
+            }
             steps {
-                container('python') {
+                script {
                     unstash 'repo'
                     sh '''
                         pip install bandit  
-                        bandit -r . -f json -o bandit_report.json'
+                        bandit -r . -f json -o bandit_report.json
                     '''
                 }
             }
@@ -76,16 +82,18 @@ pipeline {
         }
 
         stage('SCA') {
+            agent {
+                label 'python-agent'
+            }
             steps {
                 script {
-                    container('python') {
-                        sh '''
-                            # Instalar Safety
-                            pip install safety
-                            # Ejecutar análisis con Safety y guardar el reporte
-                            safety check -r requirements.txt --json > safety_report.json
-                        '''
-                    }
+                    unstash 'repo'
+                    sh '''
+                        # Instalar Safety
+                        pip install safety
+                        # Ejecutar análisis con Safety y guardar el reporte
+                        safety check -r requirements.txt --json > safety_report.json
+                    '''
                 }
             }
             post {
@@ -101,7 +109,7 @@ pipeline {
                 script {
                     container('docker') {
                         // UNTASH para que los archivos "stashed" se añadan al workspace actual
-                        untash 'repo'
+                        unstash 'repo'
                         sh '''
                             docker build -t $DOCKER_REGISTRY/$API_IMAGE -f Dockerfile.API .
                             docker build -t $DOCKER_REGISTRY/$DB_IMAGE -f Dockerfile.db .
@@ -122,8 +130,8 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    docker push $DOCKER_REGISTRY/$API_IMAGE
-                    docker push $DOCKER_REGISTRY/$DB_IMAGE
+                        docker push $DOCKER_REGISTRY/$API_IMAGE
+                        docker push $DOCKER_REGISTRY/$DB_IMAGE
                     '''
                 }
             }
@@ -133,14 +141,17 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    kubectl set image deployment/api api=$DOCKER_REGISTRY/$API_IMAGE
-                    kubectl set image deployment/db db=$DOCKER_REGISTRY/$DB_IMAGE
-                    kubectl rollout status deployment/api
-                    kubectl rollout status deployment/db
+                        kubectl set image deployment/api api=$DOCKER_REGISTRY/$API_IMAGE
+                        kubectl set image deployment/db db=$DOCKER_REGISTRY/$DB_IMAGE
+                        kubectl rollout status deployment/api
+                        kubectl rollout status deployment/db
                     '''
                 }
             }
         }
+    }
+}
+
 
     
     }
