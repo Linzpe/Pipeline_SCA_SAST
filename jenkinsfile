@@ -9,6 +9,7 @@ pipeline {
         DOCKER_REGISTRY = 'basileusmegas/pipeline'
         API_IMAGE = 'my-api:latest'
         DB_IMAGE = 'my-db:latest'
+        DOCKERHUB_CREDENTIALS_ID = '999000999' // ID de las credenciales de docker-hub
     }
 
     stages {
@@ -154,12 +155,14 @@ pipeline {
         stage('Push') {
             steps {
                 script {
-                    container('docker') {
-                    sh '''
-                        docker push $DOCKER_REGISTRY/$API_IMAGE
-                        docker push $DOCKER_REGISTRY/$DB_IMAGE
-                    '''
-                    }
+                    withCredentials([usernamePassword(credentialsID: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        container('docker') {
+                        sh '''
+                            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                            docker push $DOCKER_REGISTRY/$API_IMAGE
+                            docker push $DOCKER_REGISTRY/$DB_IMAGE
+                        '''
+                        }
                 }
             }
         }
