@@ -1,7 +1,7 @@
 pipeline {
     // Definimos el agent PREDETERMINADO
     agent {
-        label 'docker-python-agent'
+        label 'docker-agent'
     }
 
     environment {
