@@ -155,7 +155,7 @@ pipeline {
         stage('Push') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsID: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         container('docker') {
                         sh '''
                             echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
