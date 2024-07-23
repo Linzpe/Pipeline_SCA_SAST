@@ -12,11 +12,22 @@ pipeline {
     }
 
     stages {
-        stage('Inicial') {
+        stage('Inicial Docker') {
             steps {
                 script {
                     container('docker') {
                         sh 'docker --version'
+                    }
+                    // Eliminado el uso del contenedor 'python' ya que será manejado en un agente separado
+                }
+            }
+        }
+
+        stage('Inicial Python') {
+            steps {
+                script {
+                    container('python') {
+                        sh 'python --version'
                     }
                     // Eliminado el uso del contenedor 'python' ya que será manejado en un agente separado
                 }
@@ -59,10 +70,12 @@ pipeline {
             steps {
                 script {
                     unstash 'repo'
-                    sh '''
-                        pip install bandit  
-                        bandit -r . -f json -o bandit_report.json
-                    '''
+                    container('python') {
+                        sh '''
+                            pip install bandit  
+                            bandit -r . -f json -o bandit_report.json
+                        '''
+                    }
                 }
             }
             post {
@@ -88,12 +101,14 @@ pipeline {
             steps {
                 script {
                     unstash 'repo'
-                    sh '''
-                        # Instalar Safety
-                        pip install safety
-                        # Ejecutar análisis con Safety y guardar el reporte
-                        safety check -r requirements.txt --json > safety_report.json
-                    '''
+                    container('python') {
+                        sh '''
+                            # Instalar Safety
+                            pip install safety
+                            # Ejecutar análisis con Safety y guardar el reporte
+                            safety check -r requirements.txt --json > safety_report.json
+                        '''
+                    } 
                 }
             }
             post {
@@ -129,10 +144,12 @@ pipeline {
         stage('Push') {
             steps {
                 script {
+                    container('docker') {
                     sh '''
                         docker push $DOCKER_REGISTRY/$API_IMAGE
                         docker push $DOCKER_REGISTRY/$DB_IMAGE
                     '''
+                    }
                 }
             }
         }
