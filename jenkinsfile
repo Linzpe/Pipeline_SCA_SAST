@@ -24,6 +24,9 @@ pipeline {
         }
 
         stage('Inicial Python') {
+            agent {
+                label 'python-agent'
+            }
             steps {
                 script {
                     container('python') {
@@ -53,12 +56,14 @@ pipeline {
             }
             steps {
                 script {
-                    unstash 'repo'
-                    // Test de funcionamiento del código de la API
-                    sh '''
-                        pip install pytest
-                        pytest test.py
-                    '''
+                    container('python') {
+                        unstash 'repo'
+                        // Test de funcionamiento del código de la API
+                        sh '''
+                            pip install pytest
+                            pytest test.py
+                        '''
+                    }
                 }
             }
         }
