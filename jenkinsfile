@@ -16,6 +16,8 @@ pipeline {
                 script {
                     container('docker') {
                         sh 'docker --version'
+                    }
+                    container('python') {
                         sh 'python --version'
                     }
                 }
