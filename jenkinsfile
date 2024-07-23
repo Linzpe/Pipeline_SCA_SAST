@@ -99,7 +99,7 @@ pipeline {
                 sh '''
                     ls -la
                     chmod +x Security_gate.sh
-                    ./Security_gate.sh'
+                    ./Security_gate.sh
                 '''
             }
         }
