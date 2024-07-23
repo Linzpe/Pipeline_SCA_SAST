@@ -1,11 +1,12 @@
 pipeline {
     // Definimos el agent PREDETERMINADO
     agent {
-        label 'docker-agent'
+        label 'docker-python-agent'
     }
 
     environment {
         // Variables que se usan repetidas veces a lo largo del código. Son como variables de entorno.
+        DOCKER_REGISTRY = 'basileusmegas/pipeline"
         API_IMAGE = 'my-api:latest'
         DB_IMAGE = 'my-db:latest'
     }
@@ -25,10 +26,6 @@ pipeline {
         }
     
         stage('Checkout') {
-            // Definimos el agente específico de python para este stage.
-            agent {
-                label 'python-agent'
-            }
             steps {
                 git branch: 'main', url: 'https://github.com/Linzpe/Pipeline_SCA_SAST.git'
                 // GUARDAMOS LOS ARCHIVOS CLONADOS: (usamos stash, sirve para almacenar un conjunto de 
@@ -47,35 +44,10 @@ pipeline {
             }
         }
 
-        stage('Build') {
-            steps {
-                script {
-                    container('docker') {
-                        // UNTASH para que los archivos "stashed" se añadan al workspace actual
-                        untash 'repo'
-                        sh '''
-                            docker build -t $API_IMAGE -f Dockerfile.API .
-                            docker build -t $DB_IMAGE -f Dockerfile.db .
-                        '''
-                    }
-                }
-            }
-            post {
-                // En caso de que falle la etapa "build" se para el pipeline y se "postea" un failure
-                failure {
-                    echo 'Error en el stage Build. Se detiene el pipeline'
-                    error('Build failed') 
-                }
-            }
-        }
-
         stage('SAST') {
-            agent {
-                label 'python-agent'
-            }
             steps {
                 container('python') {
-                    untash 'repo'
+                    unstash 'repo'
                     sh '''
                         pip install bandit  
                         bandit -r . -f json -o bandit_report.json'
@@ -85,30 +57,23 @@ pipeline {
             post {
                 always {
                     archiveArtifacts artifacts: 'bandit_report.json', allowEmptyArchive: true
+                    stash includes: 'bandit_report.json', name: 'bandit-report'
                 }
             }
         }
 
         stage('Security Gate') {
             steps {
-                sh '''
-                    apt-get update && apt-get install -y jq
-                    highs=$(jq '[.results[] | select(.issue_severity == "HIGH")] | length' bandit_report.json)
-                    mediums=$(jq '[.results[] | select(.issue_severity == "MEDIUM")] | length' bandit_report.json)
-                    echo "Numero de HIGH VULNERABILITIES: $highs"
-                    echo "\nNumero de MEDIUM VULNERABILITIES: $mediums"
-                    if [ "$highs" > 3 ]; then
-                        echo "Hay más de 3 vulnerabilidades HIGH. Fallando la build."
-                        exit 1
-                    fi
-                '''
+                unstash 'bandit-report'
+                unstash 'repo'
+                sh 'Security_gate.sh'
             }
         }
 
         stage('SCA') {
             steps {
                 script {
-                    docker.image("$DOCKER_REGISTRY/$API_IMAGE").inside {  // Volvemos a iniciar temporalmente el contenedor
+                    container('python') {
                         sh '''
                             # Instalar Safety
                             pip install safety
@@ -122,6 +87,28 @@ pipeline {
                 always {
                     // Publicar el reporte de Safety como artefacto
                     archiveArtifacts artifacts: 'safety_report.json', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    container('docker') {
+                        // UNTASH para que los archivos "stashed" se añadan al workspace actual
+                        untash 'repo'
+                        sh '''
+                            docker build -t $DOCKER_REGISTRY/$API_IMAGE -f Dockerfile.API .
+                            docker build -t $DOCKER_REGISTRY/$DB_IMAGE -f Dockerfile.db .
+                        '''
+                    }
+                }
+            }
+            post {
+                // En caso de que falle la etapa "build" se para el pipeline y se "postea" un failure
+                failure {
+                    echo 'Error en el stage Build. Se detiene el pipeline'
+                    error('Build failed') 
                 }
             }
         }
