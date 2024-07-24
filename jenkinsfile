@@ -143,24 +143,13 @@ pipeline {
                 }
         }
 
-        stage('Pull') {
+        stage('Pull-Deploy') {
             steps {
                 script {
                     container('docker') {
                         sh '''
                             docker pull $DOCKER_REGISTRY/$API_IMAGE
                             docker pull $DOCKER_REGISTRY/$DB_IMAGE
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                script {
-                    container('docker') {
-                        sh '''
                             docker run -d $DOCKER_REGISTRY/$API_IMAGE
                             docker run -d $DOCKER_REGISTRY/$DB_IMAGE
                             docker images
