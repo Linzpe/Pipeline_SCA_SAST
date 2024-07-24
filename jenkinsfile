@@ -168,15 +168,30 @@ pipeline {
                 }
         }
 
-        stage('Pull-Deploy') {
+        stage('Pull') {
             steps {
                 script {
-                    sh '''
-                        kubectl set image deployment/api api=$DOCKER_REGISTRY/$API_IMAGE
-                        kubectl set image deployment/db db=$DOCKER_REGISTRY/$DB_IMAGE
-                        kubectl rollout status deployment/api
-                        kubectl rollout status deployment/db
-                    '''
+                    container('docker') {
+                        sh '''
+                            docker pull $DOCKER_REGISTRY/$API_IMAGE
+                            docker pull $DOCKER_REGISTRY/$DB_IMAGE
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    container('docker') {
+                        sh '''
+                            docker run -d $DOCKER_REGISTRY/$API_IMAGE
+                            docker run -d $DOCKER_REGISTRY/$DB_IMAGE
+                            docker images
+                            docker ps
+                        '''
+                    }
                 }
             }
         }
