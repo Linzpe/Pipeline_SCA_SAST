@@ -45,6 +45,17 @@ pipeline {
             }
         }
 
+        stage('TruffleHog Scan') {
+            steps {
+                script {
+                    container('docker') {
+                        sh '''
+                        docker run --rm -v "$PWD:/pwd" trufflesecurity/trufflehog:latest github --repo https://github.com/Linzpe/Pipeline_SCA_SAST.git
+                        '''
+                    }
+                }
+            }
+
         stage('Build') {
             steps {
                 script {
