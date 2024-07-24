@@ -6,7 +6,7 @@ pipeline {
 
     environment {
         // Variables que se usan repetidas veces a lo largo del código. Son como variables de entorno.
-        DOCKER_REGISTRY = 'basileusmegas/my-api'
+        DOCKER_REGISTRY = 'basileusmegas'
         API_IMAGE = 'my-api:latest'
         DB_IMAGE = 'my-db:latest'
         DOCKERHUB_CREDENTIALS_ID = '999000999' // ID de las credenciales de docker-hub
