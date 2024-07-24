@@ -13,31 +13,6 @@ pipeline {
     }
 
     stages {
-        stage('Inicial Docker') {
-            steps {
-                script {
-                    container('docker') {
-                        sh 'docker --version'
-                    }
-                    // Eliminado el uso del contenedor 'python' ya que será manejado en un agente separado
-                }
-            }
-        }
-
-        stage('Inicial Python') {
-            agent {
-                label 'python-agent'
-            }
-            steps {
-                script {
-                    container('python') {
-                        sh 'python --version'
-                    }
-                    // Eliminado el uso del contenedor 'python' ya que será manejado en un agente separado
-                }
-            }
-        }
-        
         stage('Checkout') {
             steps {
                 sh '''
