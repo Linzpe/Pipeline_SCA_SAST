@@ -6,7 +6,7 @@ pipeline {
 
     environment {
         // Variables que se usan repetidas veces a lo largo del código. Son como variables de entorno.
-        DOCKER_REGISTRY = 'basileusmegas/pipeline'
+        DOCKER_REGISTRY = 'basileusmegas/my-api'
         API_IMAGE = 'my-api:latest'
         DB_IMAGE = 'my-db:latest'
         DOCKERHUB_CREDENTIALS_ID = '999000999' // ID de las credenciales de docker-hub
@@ -155,13 +155,14 @@ pipeline {
         stage('Push') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         container('docker') {
-                        sh '''
-                            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                            docker push $DOCKER_REGISTRY/$API_IMAGE
-                            docker push $DOCKER_REGISTRY/$DB_IMAGE
-                        '''
+                            withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                                sh '''
+                                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                                    docker push $DOCKER_REGISTRY/$API_IMAGE
+                                    docker push $DOCKER_REGISTRY/$DB_IMAGE
+                                '''
+                            }
                         }
                     }
                 }
