@@ -45,6 +45,28 @@ pipeline {
             }
         }
 
+        stage('Build') {
+            steps {
+                script {
+                    container('docker') {
+                        // UNTASH para que los archivos "stashed" se añadan al workspace actual
+                        unstash 'repo'
+                        sh '''
+                            docker build -t $DOCKER_REGISTRY/$API_IMAGE -f Dockerfile.API .
+                            docker build -t $DOCKER_REGISTRY/$DB_IMAGE -f Dockerfile.db .
+                        '''
+                    }
+                }
+            }
+            post {
+                // En caso de que falle la etapa "build" se para el pipeline y se "postea" un failure
+                failure {
+                    echo 'Error en el stage Build. Se detiene el pipeline'
+                    error('Build failed') 
+                }
+            }
+        }
+
         stage('SAST') {
             agent {
                 label 'python-agent'
@@ -101,28 +123,6 @@ pipeline {
                 always {
                     // Publicar el reporte de Safety como artefacto
                     archiveArtifacts artifacts: 'safety_report.json', allowEmptyArchive: true
-                }
-            }
-        }
-
-        stage('Build') {
-            steps {
-                script {
-                    container('docker') {
-                        // UNTASH para que los archivos "stashed" se añadan al workspace actual
-                        unstash 'repo'
-                        sh '''
-                            docker build -t $DOCKER_REGISTRY/$API_IMAGE -f Dockerfile.API .
-                            docker build -t $DOCKER_REGISTRY/$DB_IMAGE -f Dockerfile.db .
-                        '''
-                    }
-                }
-            }
-            post {
-                // En caso de que falle la etapa "build" se para el pipeline y se "postea" un failure
-                failure {
-                    echo 'Error en el stage Build. Se detiene el pipeline'
-                    error('Build failed') 
                 }
             }
         }
