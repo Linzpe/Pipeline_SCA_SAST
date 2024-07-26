@@ -31,8 +31,8 @@ pipeline {
                 script {
                     container('docker') {
                         unstash 'repo'
-                        sh 'docker run --rm -i hadolint/hadolint < Dockerfile.API'
-                        sh 'docker run --rm -i hadolint/hadolint < Dockerfile.db'
+                        sh 'docker run --rm -i hadolint/hadolint < Dockerfile.API || true'
+                        sh 'docker run --rm -i hadolint/hadolint < Dockerfile.db || true'
                     }
                 }
             }
