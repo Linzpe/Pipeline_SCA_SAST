@@ -31,13 +31,27 @@ pipeline {
                 script {
                     container('docker') {
                         unstash 'repo'
-                        sh '''
-                            docker run --rm -v "$PWD:/data" hadolint/hadolint hadolint -f json > hadolint_report_API.json
-                            cat hadolint_report_API.json
-                            docker run --rm -v "$PWD:/data" hadolint/hadolint hadolint -f json > hadolint_report_API.json
-                            hadolint_report_API.json
-                        '''
+                        try {
+                            sh '''
+                                docker run --rm -v "$PWD:/data" hadolint/hadolint hadolint -f json /data/Dockerfile.API > hadolint_report_API.json
+                            '''
+                        } catch (Exception e) {
+                            echo "Error while running Hadolint on Dockerfile.API: ${e.message}"
+                        }
+                        try {
+                            sh '''
+                                docker run --rm -v "$PWD:/data" hadolint/hadolint hadolint -f json /data/Dockerfile.db > hadolint_report_DB.json
+                            '''
+                        } catch (Exception e) {
+                            echo "Error while running Hadolint on Dockerfile.db: ${e.message}"
+                        }
                     }
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'hadolint_report_API.json', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'hadolint_report_DB.json', allowEmptyArchive: true
                 }
             }
         }
