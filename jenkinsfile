@@ -26,6 +26,22 @@ pipeline {
             }
         }
 
+        stage('Hadolint scan') {
+            steps {
+                script {
+                    container('docker') {
+                        unstash 'repo'
+                        sh '''
+                            docker run --rm -v "$PWD:/data" hadolint/hadolint hadolint -f json > hadolint_report_API.json
+                            cat hadolint_report_API.json
+                            docker run --rm -v "$PWD:/data" hadolint/hadolint hadolint -f json > hadolint_report_API.json
+                            hadolint_report_API.json
+                        '''
+                    }
+                }
+            }
+        }
+
         stage('Test') {
             agent {
                 label 'python-agent'
