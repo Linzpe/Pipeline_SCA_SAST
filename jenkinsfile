@@ -64,9 +64,8 @@ pipeline {
                     container('docker') {
                         unstash 'repo'
                         sh '''
-                            docker run --rm -v "$PWD/Dockerfile.API:/Dockerfile.API" hadolint/hadolint hadolint -f json /Dockerfile.API > hadolint_report_API.json
-                            docker run --rm -v "$PWD/Dockerfile.db:/Dockerfile.db" hadolint/hadolint hadolint -f json /Dockerfile.db > hadolint_report_db.json
-
+                            docker run --rm -v "$PWD:/data" hadolint/hadolint hadolint -f json /data/Dockerfile.API > hadolint_report_API.json
+                            docker run --rm -v "$PWD:/data" hadolint/hadolint hadolint -f json /data/Dockerfile.db > hadolint_report_API.json
                         '''
                     }
                 }
