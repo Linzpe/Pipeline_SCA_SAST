@@ -26,18 +26,6 @@ pipeline {
             }
         }
 
-        stage('Hadolint scan') {
-            steps {
-                script {
-                    container('docker') {
-                        unstash 'repo'
-                        sh 'docker run --rm -i hadolint/hadolint < Dockerfile.API || true'
-                        sh 'docker run --rm -i hadolint/hadolint < Dockerfile.db || true'
-                    }
-                }
-            }
-        }
-
         stage('Test') {
             agent {
                 label 'python-agent'
@@ -65,6 +53,18 @@ pipeline {
                         sh '''
                             docker run --rm -v "$PWD:/pwd" trufflesecurity/trufflehog:latest github --repo https://github.com/Linzpe/Pipeline_SCA_SAST.git
                         '''
+                    }
+                }
+            }
+        }
+
+        stage('Hadolint scan') {
+            steps {
+                script {
+                    container('docker') {
+                        unstash 'repo'
+                        sh 'docker run --rm -i hadolint/hadolint < Dockerfile.API || true'
+                        sh 'docker run --rm -i hadolint/hadolint < Dockerfile.db || true'
                     }
                 }
             }
