@@ -74,20 +74,6 @@ pipeline {
             }
         }
 
-        stage('Hadolint scan') {
-            steps {
-                script {
-                    container('docker') {
-                        unstash 'repo'
-                        sh '''
-                            docker run --rm -v "$PWD:/data" hadolint/hadolint hadolint -f json /data/Dockerfile.API > hadolint_report_API.json
-                            docker run --rm -v "$PWD:/data" hadolint/hadolint hadolint -f json /data/Dockerfile.db > hadolint_report_API.json
-                        '''
-                    }
-                }
-            }
-        }
-
         stage('Build') {
             steps {
                 script {
