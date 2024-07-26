@@ -64,8 +64,8 @@ pipeline {
                     container('docker') {
                         unstash 'repo'
                         sh '''
-                            cat Dockerfile.API | docker run --rm -d hadolint/hadolint hadolint -f json > hadolint_report_API.json
-                            cat Dockerfile.db | docker run --rm -d hadolint/hadolint hadolint -f json > hadolint_report_DB.json
+                            cat Dockerfile.API | docker run --rm -i hadolint/hadolint hadolint -f json > hadolint_report_API.json
+                            cat Dockerfile.db | docker run --rm -i hadolint/hadolint hadolint -f json > hadolint_report_DB.json
                         '''
                     }
                 }
